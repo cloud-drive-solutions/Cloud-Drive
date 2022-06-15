@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <fstream>
 
-#include "linkedlist.cpp"
+#include "linkedList.cpp"
 
 using namespace std;
 
@@ -20,7 +20,7 @@ public:
         bool ret = false;
         for (int i = 0; i < dictionary->getSize(); i++) {
             if (dictionary->getElements(i) == chars) {
-                dictionary->getData(i)
+                dictionary->getData(i);
                 for (int j = 0; j < chars; j++) {
 
                 }
@@ -150,7 +150,7 @@ public:
 
 };
 
-
+/*
 int main() {
     lzwCompressor lzw;
 
@@ -158,3 +158,4 @@ int main() {
 
     return 0;
 }
+ */
