@@ -1,134 +1,209 @@
-#include <bits/stdc++.h>
+#include <vector>
+#include <iostream>
+#include <map>
+#include <queue>
+#include <fstream>
+#include <iterator>
+#include <algorithm>
+
 using namespace std;
 
-// A Huffman tree node
+/**
+ * Class that creates a heap node for the Huffman tree
+ */
 class MinHeapNode
 {
 public:
-    char data;			 // One of the input characters
-    int freq;			 // Frequency of the character
-    MinHeapNode *left{}, *right{}; // Left and right child
+    char value;	// Value of the node
+    int freq;	// Frequency of the character
+    MinHeapNode *left{}, *right{}; // Left and right branches
 
-    MinHeapNode(char data, int freq)
+    /**
+     *
+     * Constructor function that establishes value and frequency for the node
+     *
+     * @param value
+     * @param freq
+     */
+    MinHeapNode(char value, int freq)
     {
-        //left = right = nullptr;
-        this->data = data;
+        this->value = value;
         this->freq = freq;
     }
 };
 
-// utility function for the priority queue
+/**
+ * Class used for the priority queue, return bool of left > right
+ */
 class compare
 {
 public:
-    bool operator()(MinHeapNode* l, MinHeapNode* r)
+    bool operator()(MinHeapNode* l, MinHeapNode* r) // Creates two heap nodes for left and right branches
     {
-        return (l->freq > r->freq);
+        return (l->freq > r->freq); // Compares if left is larger than right
     }
 };
 
-// STL priority queue to store heap tree, according to their heap root node value
-priority_queue<MinHeapNode*, vector<MinHeapNode*>, compare> minHeap;
-
-// to store the frequency of character of the input data
-map<char, int> freq;
-
-// utility function to store map each character with its frequency in input string
-void FreqMeasure(const string& str)
+/**
+ * Class that includes different functions for the compression of a string via the Huffman algorithm
+ */
+class HuffmanTree
 {
-    for (char i : str) {
-        freq[i]++;
-    }
-}
+public:
+    priority_queue<MinHeapNode*, vector<MinHeapNode*>, compare> minHeap; // Creates tree queue
+    map<char, int> freq; // frequency has a char and number associated
+    map<char, string> codes; // Codes have a char and string associated
 
-// to map each character its huffman value
-map<char, string> codes;
-
-// utility function to store characters along with there huffman value in a hash table, here we have C++ STL map
-void storeCodes(struct MinHeapNode* root, const string& str)
-{
-    if (root == nullptr)
-        return;
-    if (root->data != '$')
-        codes[root->data]=str;
-    storeCodes(root->left, str + "0");
-    storeCodes(root->right, str + "1");
-}
-
-// function to build the Huffman tree and store it
-// in minHeap
-void HuffmanCodes()
-{
-    struct MinHeapNode *left, *right, *top;
-    for (auto & v : freq)
-        minHeap.push(new MinHeapNode(v.first, v.second));
-    while (minHeap.size() != 1)
+    /**
+     *
+     * Measures the frequency of each character in the input string
+     *
+     * @param str
+     * @param n
+     */
+    void FreqMeasure(const string& str, int n)
     {
-        left = minHeap.top();
-        minHeap.pop();
-        right = minHeap.top();
-        minHeap.pop();
-        top = new MinHeapNode('$', left->freq + right->freq);
-        top->left = left;
-        top->right = right;
-        minHeap.push(top);
-    }
-    storeCodes(minHeap.top(), "");
-}
-
-// utility function to print characters along with
-// there huffman value
-void printCodes(struct MinHeapNode* root, const string& str)
-{
-    if (!root)
-        return;
-    if (root->data != '$')
-        cout << root->data << ": " << str << "\n";
-    printCodes(root->left, str + "0");
-    printCodes(root->right, str + "1");
-}
-
-// function iterates through the encoded string s
-// if s[i]=='1' then move to node->right
-// if s[i]=='0' then move to node->left
-// if leaf node append the node->data to our output string
-string decode_file(struct MinHeapNode* root, const string& s)
-{
-    string ans;
-    struct MinHeapNode* curr = root;
-    for (char i : s)
-    {
-        if (i == '0')
-            curr = curr->left;
-        else
-            curr = curr->right;
-
-        // reached leaf node
-        if (curr->left==nullptr and curr->right==nullptr)
-        {
-            ans += curr->data;
-            curr = root;
+        for (char i : str) { // For character in string increase frequency int
+            freq[i]++;
         }
     }
-    return ans;
-}
 
-/*
+    /**
+     *
+     * Stores the given codes on the tree heap nodes
+     *
+     * @param root
+     * @param str
+     */
+    void storeCodes(MinHeapNode* root, const string& str)
+    {
+        if (root == nullptr)   // if the root is null stop
+        {return;}
+        if (root->value != '\0') // if the value of root isnt null
+        {codes[root->value] = str;} // the value of root is now in codes
+
+        storeCodes(root->left, str + "0");  // assign 0 to left branch
+        storeCodes(root->right, str + "1"); // assign 1 to right branch
+    }
+
+    /**
+     * Generates a tree using heap nodes, the priority queue and storing its codes on the codes map
+     */
+    void generateTree()
+    {
+        MinHeapNode *left, *right, *top;  // Creates node and its branches
+        for (auto &v: freq) {   // For values in freq, add a node with its value and frequency
+            minHeap.push(new MinHeapNode(v.first, v.second));
+        }
+        while (minHeap.size() != 1)
+        {
+            left = minHeap.top(); // Left is the largest element
+            minHeap.pop(); // Remove it from queue
+            right = minHeap.top(); // Right is the second largest element
+            minHeap.pop(); // Remove it from queue
+            top = new MinHeapNode('\0', left->freq + right->freq); // top value null, frequency is left+right
+            top->left = left; // left branch of top node is left
+            top->right = right; // right branch of top node is right
+            minHeap.push(top); // push top to the queue
+        }
+        storeCodes(minHeap.top(), ""); // Stores the root of the queue with value ""
+    }
+
+    /**
+     * Helpful function to print out the dictionary
+     */
+    void printCodes()
+    {
+        for (auto &code : codes) { // For code pair in codes, print first value and second value
+            cout << code.first << ": " << code.second << endl;
+        }
+    }
+
+    /**
+     *
+     * Decodes a compressed string using the heap node as a dictionary, returning the original string
+     *
+     * @param root
+     * @param encodedString
+     * @return
+     */
+    static string decode_file(MinHeapNode* root, const string& encodedString)
+    {
+        string decodedString;
+        MinHeapNode* curr = root;
+        
+        for (char i : encodedString)
+        {
+            if (i == '0') { // If code is 0, traverse left branch
+                curr = curr->left;
+            }
+            else if (i == '1') {  // If code is 1, traverse right branch
+                    curr = curr->right;
+            }
+
+            if (curr->left == nullptr and curr->right == nullptr) // If next branches are null, add the value of the
+                                                                 // node to output, return to root
+            {
+                decodedString += curr->value;
+                curr = root;
+            }
+        }
+        return decodedString; // Return decoded string
+    }
+};
+
 int main() {
-    string str = "TEC";
+    string line;
+    ifstream fileToCompress("example_text.txt");
+    ofstream compressedFile("example_text.huffman");
+    string stringToCompress;
 
-    FreqMeasure(str);
-    HuffmanCodes();
+    if (fileToCompress.is_open()) { // if
+        while (getline(fileToCompress, line)) {
+            stringToCompress += line + "\n";
+        }
+        fileToCompress.close();
+    }
 
+    else {
+        cout << "Unable to open file";
+    }
+
+    //string str = "begin";
     string encodedString, decodedString;
 
-    for (auto i: str)
-        encodedString += codes[i];
+    HuffmanTree h1;
 
-    cout << "Compressed Huffman code: " << encodedString << endl;
+    h1.FreqMeasure(stringToCompress, stringToCompress.length()); // Measures frequency for library
+    h1.generateTree();  // Creates a Huffman tree
 
-    decodedString = decode_file(minHeap.top(), encodedString);
+    cout << "Library is: " << endl;
+    h1.printCodes();
 
-    cout << "Uncompressed Huffman code: " << decodedString << endl;
+    for (auto i: stringToCompress) {
+        encodedString += h1.codes[i]; // Adds the Huffman compressed codes to the string
+    }
+
+    /*
+    cout << endl;
+    cout << "Compressed code is: " << endl;
+    cout << encodedString << endl;
+
+    cout << endl;
+    cout << "Decompressed code is: " << endl;
+
+    decodedString = h1.decode_file(h1.minHeap.top(), encodedString);
+
+    cout << decodedString << endl;
+    */
+
+    if (compressedFile.is_open()) {
+        compressedFile << encodedString;
+        compressedFile.close();
+    }
+
+    else {
+        cout << "Unable to open file" << endl;
+    }
+    return 0;
 }
-*/
