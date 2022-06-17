@@ -10,23 +10,40 @@ using namespace std;
 
 class lzwCompressor {
 private:
-    LinkedList *dictionary;
-    int *code = new int[10000];
+    string *dictionary;
+    int dici = 0;
+    int *code;
+    int codei = 0;
     char *data;
     size_t size;
 
 public:
-    bool searchInDictionary(char* search, int chars) {
+    bool searchInDictionary(string search, int chars) {
         bool ret = false;
-        for (int i = 0; i < dictionary->getSize(); i++) {
-            if (dictionary->getElements(i) == chars) {
-                dictionary->getData(i);
-                for (int j = 0; j < chars; j++) {
+        for (int i = 0; i < size && !ret; i++) {
+            if (dictionary[i].length() == chars) {
+                if (dictionary[i] == search) {
+                    ret = true;
+                    break;
+                } else if (dictionary[i] == "") {
+                    break;
+                } 
+            } 
+        }
+        return ret;
+    }
 
-                }
-            }
-            ret = true;
-            break;
+    int indexInDictionary(string search, int chars) {
+        int ret = -1;
+        for (int i = 0; i < size && ret == -1; i++) {
+            if (dictionary[i].length() == chars) {
+                if (dictionary[i] == search) {
+                    ret = i;
+                    break;
+                } else if (dictionary[i] == "") {
+                    break;
+                } 
+            } 
         }
         return ret;
     }
@@ -34,102 +51,92 @@ public:
     void compress(string filename) {
         readFile(filename);
         initCharacters();
+        
+        string p;
+        string c;
+        string pc;
 
-        string p = "";
-        p += data[0];
-        char c;
-        string pc = "";
+        p = data[0];      
 
-        for (int i = 1; i < 300; i++) {
+        for (int i = 1; i < size; i++) {
+            cout << dici << " " << i << " ";
             c = data[i];
-
+            
             pc = p;
-            p += c;
+            pc += c;
+            
+            if (searchInDictionary(pc, pc.length())) {
+                p = "";
+                p += pc;
 
-            char pcChar[pc.length() + 1];
-            strcpy(pcChar, pc.c_str());
+            } else {
+                int codeDic = indexInDictionary(p, p.length());
+                code[codei] = codeDic;
+                codei++;
 
-            cout << pc << endl;
+                dictionary[dici] = pc;
+                dici++;
 
-            if (searchInDictionary(pcChar, pc.length())) {
+                p = "";
+                p += c;
 
             }
-        }
-        
-       
-
-        char charr = 0x25;
-        p += charr;
-        p += 0x50;
-
-        char strinng[p.length() + 1];
-        strcpy(strinng, p.c_str());
-        cout << "P: " << p << " : " << strinng << " : " << endl;
-
-        
-
-        
-
-
-        /*
-        char *toPrint = new char[3];
-        for (int i = 0; i < 9; i++) {
-            printf("%d ", strlen(toPrint));
-            toPrint[0] = data[i];
-            toPrint[1] = data[i + 1];
-            toPrint[2] = '\0';
-
-            printf("%x ", toPrint[0]);
-            printf("%x ", toPrint[1]);
-            printf("%x\n", toPrint[2]);
-            
-            //printf("%x ", toPrint[1]);
-            //printf("%d ", toPrint);
+            c = "";    
+            pc = "";        
         }
 
-        char *compare = new char[3];
-        compare[0] = 0x25;
-        compare[1] = 0x50;
-        compare[2] = '\0';
+        cout << endl;
+        cout << endl;
 
-        toPrint[0] = data[0];
-        toPrint[1] = data[1];
-        toPrint[2] = '\0';
-
-        if (strcmp(compare, toPrint) == 0) {
-            printf("%s ", "nao");
+        for (int i = 0; i < dici; i++) {
+            string tmp = dictionary[i];
+            printf("%d: ", i);
+            for (int j = 0; j < tmp.length(); j++) {
+                printf("%X", (unsigned char )tmp.c_str()[j]);
+            }   
+            printf("%s", ", ");   
         }
-        */
 
+        cout << endl;
+        cout << endl;
 
+        for (int i = 0; i < dici; i++) {
+            printf("%d, ", code[i]);      
+        }
+        
     }
 
     void initCharacters() {
-        char *character = new char;
         bool put = true;
+        bool end = false;
+        string character;
+        for (int i = 0; i < size && !end; i++) {
+            character += data[i];
 
-        for (int i = 0; i < 300; i++) {
-            character = new char;
-            *character = this->data[i];
-            for (int j = 0; j < dictionary->getSize() && put; j++) {
-                if (dictionary->getData(j)[0] == *character) {
+            for (int j = 0; j < dici + 1 && put; j++) {
+                if (dictionary[j] == character) {
                     put = false;  
                 }
             }
 
             if (put) {
-                dictionary->addData(character, 1);
+                dictionary[dici] = character;
+                dici++;
             }
             put = true;
+            character = "";
         }
 
-        for (int i = 0; i < dictionary->getSize(); i++) {
-            printf("%X ", (unsigned char)dictionary->getData(i)[0]);
+        for (int i = 0; i < size; i++) {
+            if (dictionary[i] != "") {
+                printf("%X ", (unsigned char )dictionary[i].c_str()[0]);
+            } else {
+                break;
+            }
         }
     }
 
     void readFile(string filename) {
-        dictionary = new LinkedList();
         std::ifstream file;
         
         file.open(filename.c_str(), std::ios::binary | std::ios::in | std::ios::ate);
@@ -138,24 +145,23 @@ public:
         size = file.tellg();
         file.seekg(0, std::ios::beg);
 
-        data = new char[300];
-        file.read(data, 300);
+        data = new char[size];
+        file.read(data, size);
 
-        //for (int i = 0; i < size; i++) {
-        //    printf("%x ", (unsigned char)data[i]);
-        //}
+        code = new int[size];
+
+        dictionary = new string[size];
         
         file.close();
     }
 
 };
 
-/*
+
 int main() {
     lzwCompressor lzw;
 
-    lzw.compress("pddf.pdf");
+    lzw.compress("doc.pdf");
 
     return 0;
 }
- */
