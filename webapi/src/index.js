@@ -26,8 +26,10 @@ connection.once('open', () => {
 })
 
 const userRouter = require('./routes/user');
+const filesRouter = require('./routes/files');
 
 app.use('/user', userRouter);
+app.use('/files', filesRouter);
 
 //Start server
 app.listen(app.get('port'), () => {
