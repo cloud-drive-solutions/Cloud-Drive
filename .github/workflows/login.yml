@@ -1,4 +1,4 @@
-# File: .github/workflows/OIDC_workflow.yml
+# File: .github/workflows/login.yml
 
 name: Run Azure Login with OIDC
 on: [push]
